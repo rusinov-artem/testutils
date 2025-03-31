@@ -5,6 +5,7 @@ go 1.23.1
 require (
 	github.com/segmentio/kafka-go v0.4.47
 	github.com/stretchr/testify v1.8.1
+	go.uber.org/mock v0.4.0
 	go.uber.org/zap v1.27.0
 )
 

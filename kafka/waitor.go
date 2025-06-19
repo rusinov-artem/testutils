@@ -13,6 +13,9 @@ import (
 
 type Checker func(m kafka.Message) bool
 
+// тут лучше перейти на 
+// https://github.com/twmb/franz-go
+// так как тут есть возможность удалять consumer groups
 type Finder struct {
 	t *testing.T
 

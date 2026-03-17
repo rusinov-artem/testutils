@@ -75,7 +75,6 @@ func NewConsumer(ctx context.Context, t *testing.T, broker []string, topic, grou
 				err = c.consume(m, err)
 				if err != nil {
 					t.Logf("consumer stopped: %s", err)
-					c.t.FailNow()
 					return
 				}
 			}

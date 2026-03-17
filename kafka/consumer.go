@@ -35,18 +35,15 @@ type Handler interface {
 }
 
 type Consumer struct {
-	t        *testing.T
-	lock     *sync.Mutex
-	handler  Handler
-	run      chan struct{}
-	isRuning bool
+	t       *testing.T
+	lock    *sync.Mutex
+	handler Handler
 }
 
 func NewConsumer(ctx context.Context, t *testing.T, broker []string, topic, group string) *Consumer {
 	c := &Consumer{}
 	c.t = t
 	c.lock = &sync.Mutex{}
-	c.run = make(chan struct{})
 
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:     broker,
@@ -65,11 +62,8 @@ func NewConsumer(ctx context.Context, t *testing.T, broker []string, topic, grou
 		stopReading()
 		r.Close()
 	})
-	m, err := r.ReadMessage(ctx)
 
 	go func() {
-		<-c.run
-		c.consume(m, err)
 		for {
 			select {
 			case <-ctx.Done():
@@ -86,13 +80,6 @@ func NewConsumer(ctx context.Context, t *testing.T, broker []string, topic, grou
 	}()
 
 	return c
-}
-
-func (c *Consumer) Run() {
-	if !c.isRuning {
-		close(c.run)
-		c.isRuning = true
-	}
 }
 
 func (c *Consumer) consume(m kafka.Message, err error) error {

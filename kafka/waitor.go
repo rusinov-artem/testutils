@@ -44,12 +44,14 @@ func (f *Finder) Find(fn Checker) {
 	f.checker = fn
 
 	r := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:  []string{f.broker},
-		Topic:    f.topic,
-		GroupID:  f.groupID(),
-		MaxBytes: 10e6,
-		MaxWait:  100 * time.Millisecond,
+		Brokers:     []string{f.broker},
+		Topic:       f.topic,
+		GroupID:     f.groupID(),
+		MaxBytes:    10e6,
+		MaxWait:     100 * time.Millisecond,
+		StartOffset: kafka.LastOffset,
 	})
+	r.SetOffset(kafka.LastOffset)
 
 	f.t.Cleanup(func() {
 		r.Close()

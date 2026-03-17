@@ -13,7 +13,7 @@ import (
 
 type Checker func(m kafka.Message) bool
 
-// тут лучше перейти на 
+// тут лучше перейти на
 // https://github.com/twmb/franz-go
 // так как тут есть возможность удалять consumer groups
 type Finder struct {
@@ -44,9 +44,9 @@ func (f *Finder) Find(fn Checker) {
 	f.checker = fn
 
 	r := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:  []string{"localhost:9092"},
+		Brokers:  []string{f.broker},
 		Topic:    f.topic,
-		GroupID:  f.testName(),
+		GroupID:  f.groupID(),
 		MaxBytes: 10e6,
 		MaxWait:  100 * time.Millisecond,
 	})
@@ -92,7 +92,7 @@ func (f *Finder) Wait(d time.Duration) {
 	assert.True(f.t, f.found, msg)
 }
 
-func (f *Finder) testName() string {
+func (f *Finder) groupID() string {
 	name := f.t.Name()
 	return strings.ReplaceAll(name, "_", "/")
 }

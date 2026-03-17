@@ -35,15 +35,18 @@ type Handler interface {
 }
 
 type Consumer struct {
-	t       *testing.T
-	lock    *sync.Mutex
-	handler Handler
+	t        *testing.T
+	lock     *sync.Mutex
+	handler  Handler
+	run      chan struct{}
+	isRuning bool
 }
 
 func NewConsumer(ctx context.Context, t *testing.T, broker []string, topic, group string) *Consumer {
 	c := &Consumer{}
 	c.t = t
 	c.lock = &sync.Mutex{}
+	c.run = make(chan struct{})
 
 	r := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:     broker,
@@ -62,27 +65,48 @@ func NewConsumer(ctx context.Context, t *testing.T, broker []string, topic, grou
 		stopReading()
 		r.Close()
 	})
+	m, err := r.ReadMessage(ctx)
 
 	go func() {
+		<-c.run
+		c.consume(m, err)
 		for {
 			select {
 			case <-ctx.Done():
 				return
 			default:
 				m, err := r.ReadMessage(ctx)
+				err = c.consume(m, err)
 				if err != nil {
-					break
+					t.Logf("consumer stopped: %s", err)
+					c.t.FailNow()
+					return
 				}
-				c.lock.Lock()
-				if c.handler != nil {
-					c.handler.Handle(convert(m))
-				}
-				c.lock.Unlock()
 			}
 		}
 	}()
 
 	return c
+}
+
+func (c *Consumer) Run() {
+	if !c.isRuning {
+		close(c.run)
+		c.isRuning = true
+	}
+}
+
+func (c *Consumer) consume(m kafka.Message, err error) error {
+	if err != nil {
+		return err
+	}
+
+	c.lock.Lock()
+	if c.handler != nil {
+		c.handler.Handle(convert(m))
+	}
+	c.lock.Unlock()
+	return nil
 }
 
 func (c *Consumer) SetHandler(handler Handler) {

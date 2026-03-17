@@ -62,8 +62,10 @@ func NewConsumer(ctx context.Context, t *testing.T, broker []string, topic, grou
 		stopReading()
 		r.Close()
 	})
+	m, err := r.ReadMessage(ctx)
 
 	go func() {
+		c.consume(m, err)
 		for {
 			select {
 			case <-ctx.Done():
@@ -73,6 +75,7 @@ func NewConsumer(ctx context.Context, t *testing.T, broker []string, topic, grou
 				err = c.consume(m, err)
 				if err != nil {
 					t.Logf("consumer stopped: %s", err)
+					c.t.FailNow()
 					return
 				}
 			}
